@@ -5,15 +5,13 @@ Rouault M., Dayan P. & Fleming S. M. Forming global estimates of self-performanc
 
 Script and data files are included in the repository to enable replication of data analyses and rapid generation of the figures in the paper.
 
-The folder DATA contains anonymised behavioral data files for each of the three experiments of the paper, providing the summarised individual data for all plots and statistics, and one file containing the material for running the hierarchical learning model simulations: 
+The folder DATA contains anonymised behavioral data files for each of the three experiments of the paper, providing the summarised individual data for all plots and statistics: 
 
 •	Exp1.mat
 
 •	Exp2.mat
 
 •	Exp3.mat
-
-•	DESIGN.mat
 
 It also contains a file (perf_data_for_jasp.csv) allowing replication of Bayesian t-tests under JASP (https://jasp-stats.org/).
 The folder SCRIPTS contains three main scripts to enable replication of statistical analyses and rapid generation of the figures for each of the three experiments in the paper:
