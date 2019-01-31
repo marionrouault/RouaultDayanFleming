@@ -1,5 +1,6 @@
 % Forming global estimates of self-performance from local confidence
-% Rouault, Dayan and Fleming (2018). Experiment 3 (N=46).
+% Rouault M., Dayan P. and Fleming S. M. Nature Communications (2019).  
+% Experiment 3 (N=46).
 
 
 % ---------------------------------------------------
@@ -36,10 +37,11 @@ confCorrIncorr          = Exp3.confCorrIncorr ;
 conf_perf_correlation   = Exp3.conf_perf_correlation ;
 regLB_all               = Exp3.regLB_all ;
 X_ser6_all              = Exp3.X_ser6_all ;
-% Load hierarchical metacognitive efficiency fit (HMeta-d)
-% Separately fitted for easy (E) and difficult (D) trials
-fitHMD                  = Exp3.fitHMD ;
-fitHME                  = Exp3.fitHME ;
+nR_S1_E = Exp3.nR_S1_E ;
+nR_S2_E = Exp3.nR_S2_E ;
+nR_S1_D = Exp3.nR_S1_D ;
+nR_S2_D = Exp3.nR_S2_D ;
+auroc2  = Exp3.auroc2  ;
 
 
 % abscisses for graph:
@@ -52,10 +54,14 @@ x8  = 1:8 ;
 x12 = 1:12 ;
 x30 = 1:30 ;
 
-color_fbeasy   = [120 147 60 ]/255;
-color_fbdif    = [228 108 11 ]/255;
-color_nofbeasy = [216 228 189]/255;
-color_nofbdif  = [253 214 180]/255;
+sss = 0.27 ;
+ttt = 0.17 ;
+
+% colors for graphs:
+colorE = [0 153 51]/255 ;
+colorD = [255 153 21]/255 ;
+color_grey = [.2 .2 .2] ;
+
 
 % how many participants: N=46
 nS = size(T,1) ;
@@ -118,12 +124,33 @@ pair6 = regLB_all(regLB_all(:,2)==6,1:2:3) ;
 
 % pool all regressors you want in the GLM function:
 X = pair1(:,2)/2 ; % block duration
+% EDIT here for each of the 6 pairings: pair 1, ..., pair6:
 
 Y = boolean(pair1(:,1)-1); % convert vector in logical (islogical)
 
 [B,DEV,STATS] = glmfit(X,Y,'binomial','link','logit');
 % NB. All relevant regression coef (betas) are in STATS.
 
+
+
+% regression for examining influence of difference in performance on
+% task choice, separately per type of block, in FFX:
+
+pair1 = regLB_all(regLB_all(:,2)==1,[1 4]) ;
+pair2 = regLB_all(regLB_all(:,2)==2,[1 4]) ;
+pair3 = regLB_all(regLB_all(:,2)==3,[1 4]) ;
+pair4 = regLB_all(regLB_all(:,2)==4,[1 4]) ;
+pair5 = regLB_all(regLB_all(:,2)==5,[1 4]) ;
+pair6 = regLB_all(regLB_all(:,2)==6,[1 4]) ;
+
+
+% pool all regressors you want in the GLM function:
+X = pair1(:,2)/2 ; % difference in performance
+% EDIT here for each of the 6 pairings: pair 1, ..., pair6:
+
+Y = boolean(pair1(:,1)-1); % convert vector in logical (islogical)
+
+[B,DEV,STATS] = glmfit(X,Y,'binomial','link','logit');
 
 
 
@@ -157,14 +184,15 @@ Y = boolean(X_ser6_all(:,7)-1); % convert vector in logical (islogical)
 
 DEVser6full = DEVser6 ;
 
-% Plot Figure 4 from the paper:
+
+% Main Figure 5 from paper
 figure;
 hold on;
 bar(Bser6,'FaceColor',[1 1 1],'EdgeColor',[0 153 204]/255,'LineWidth',4)
 errorbar(1:4,Bser6,STATSser6.se,'k.','LineWidth',4)
 title('Contribution to task choice','fontsize',30)
 ylabel('regression coefficient (a.u.)','fontsize',30)
-set(gca,'fontsize',30, 'XTickLabel',{'','baseline','accDiff','rtDiff','confDiff',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','baseline','accDiff','rtDiff','confDiff',''})
 hold off
 
 
@@ -246,10 +274,15 @@ disp(['BIC reduced model: ',num2str(BICser6reduced)])
 
 
 
+
+
 % ---------------------------------------------------
-%         Check H-Metad fits:
+%       Metacognitive efficiency: H-Metad fits
 % ---------------------------------------------------
 
+% fit hierarchical HMeta-d model:
+fitHME = fit_meta_d_mcmc_group(nR_S1_E, nR_S2_E) ;
+fitHMD = fit_meta_d_mcmc_group(nR_S1_D, nR_S2_D) ;
 
 disp(['mean H-Mratio easy: ',num2str(exp(fitHME.mu_logMratio))])
 disp(['mean H-Mratio diff: ',num2str(exp(fitHMD.mu_logMratio))])
@@ -276,11 +309,11 @@ confCorrIncorrPlot = confCorrIncorr(all(~isnan(confCorrIncorr),2),:);
 figure;
 hold on;
 errorbar(1:length(x2),[mean(confCorrIncorrPlot(:,3)) mean(confCorrIncorrPlot(:,1))], ...
-    [std(confCorrIncorrPlot(:,3)) std(confCorrIncorrPlot(:,1))]/sqrt(nS),'Color',[0 .6 0],'LineWidth',3)
+    [std(confCorrIncorrPlot(:,3)) std(confCorrIncorrPlot(:,1))]/sqrt(nS),'Color',[0 .6 0],'LineWidth',5)
 errorbar(1:length(x2),[mean(confCorrIncorrPlot(:,4)) mean(confCorrIncorrPlot(:,2))], ...
-    [std(confCorrIncorrPlot(:,4)) std(confCorrIncorrPlot(:,2))]/sqrt(nS),'Color',[.6 0 0],'LineWidth',3)
+    [std(confCorrIncorrPlot(:,4)) std(confCorrIncorrPlot(:,2))]/sqrt(nS),'Color',[.6 0 0],'LineWidth',5)
 ylabel('Confidence level','fontsize',28)
-set(gca,'fontsize',28,'LineWidth',1.2,'XTickLabel',{'','Diff.','Easy',''})
+set(gca,'fontsize',28,'LineWidth',1.5,'XTickLabel',{'','Diff.','Easy',''})
 axis([0 length(x2)+1 .6 .9])
 hold off
 
@@ -289,23 +322,25 @@ hold off
 % Global self-performance estimates across the 4 experimental conditions:
 figure;
 hold on;
-errorbar(1:length(x5),mean(task_ch_fbeasy),std(task_ch_fbeasy)/sqrt(nS), ...
-    'Color',color_fbeasy,'LineWidth',3)
-errorbar(1:length(x5),mean(task_ch_fbdif),std(task_ch_fbdif)/sqrt(nS), ...
-    'Color',color_fbdif,'LineWidth',3)
-errorbar(1:length(x5),mean(task_ch_nofbeasy),std(task_ch_nofbeasy)/sqrt(nS), ...
-    'Color',color_nofbeasy,'LineWidth',3)
-errorbar(1:length(x5),mean(task_ch_nofbdif),std(task_ch_nofbdif)/sqrt(nS), ...
-    'Color',color_nofbdif,'LineWidth',3)
-ylabel('Task choice frequency','fontsize',28)
-xlabel('Learning duration (trials)','fontsize',28)
-set(gca,'fontsize',28,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+errorbar(x5,mean(task_ch_fbeasy),std(task_ch_fbeasy)/sqrt(nS), ...
+    'Color',colorE,'LineWidth',5)
+errorbar(x5,mean(task_ch_fbdif),std(task_ch_fbdif)/sqrt(nS), ...
+    'Color',colorD,'LineWidth',5)
+errorbar(x5,mean(task_ch_nofbeasy),std(task_ch_nofbeasy)/sqrt(nS), ...
+    'Color',colorE,'LineWidth',5,'LineStyle','--')
+errorbar(x5,mean(task_ch_nofbdif),std(task_ch_nofbdif)/sqrt(nS), ...
+    'Color',colorD,'LineWidth',5,'LineStyle','--')
+ylabel('Task choice frequency','fontsize',25)
+xlabel('Learning duration (trials)','fontsize',25)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 .5])
 hold off
 
 
 
-% Global self-performance estimates in each of the 6 task pairings:
+% Global self-performance estimates in each of the 6 task pairings as a
+% function of block duration
+% Supplementary Figure Experiment 3
 
 T1valmean = mean(task1val,3) ;
 T2valmean = mean(task2val,3) ;
@@ -315,52 +350,51 @@ T2valstd  = std(task2val,0,3)/sqrt(nS) ;
 figure;
 subplot(2,3,1) % pairing 1: FB70   T1 - FB85   T2
 hold on;
-errorbar(1:length(x5),T1valmean(1,:),T1valstd(1,:),'Color',color_fbdif,'LineWidth',3)
-errorbar(1:length(x5),T2valmean(1,:),T2valstd(1,:),'Color',color_fbeasy,'LineWidth',3)
-ylabel('Task choice freq','fontsize',30)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+errorbar(x5,T1valmean(1,:),T1valstd(1,:),'Color',colorD,'LineWidth',5)
+errorbar(x5,T2valmean(1,:),T2valstd(1,:),'Color',colorE,'LineWidth',5)
+ylabel('Task choice frequency','fontsize',30)
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 1])
 hold off
 
 subplot(2,3,2) % pairing 2: FB70   T1 - NOFB70 T2
 hold on;
-errorbar(1:length(x5),T1valmean(2,:),T1valstd(2,:),'Color',color_fbdif,'LineWidth',3)
-errorbar(1:length(x5),T2valmean(2,:),T2valstd(2,:),'Color',color_nofbdif,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+errorbar(x5,T1valmean(2,:),T1valstd(2,:),'Color',colorD,'LineWidth',5)
+errorbar(x5,T2valmean(2,:),T2valstd(2,:),'Color',colorD,'LineWidth',5,'LineStyle','--')
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 1])
 hold off
 
 subplot(2,3,3) % pairing 3: FB70   T2 - NOFB85 T1
 hold on;
-errorbar(1:length(x5),T1valmean(3,:),T1valstd(3,:),'Color',color_nofbeasy,'LineWidth',3)
-errorbar(1:length(x5),T2valmean(3,:),T2valstd(3,:),'Color',color_fbdif,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+errorbar(x5,T1valmean(3,:),T1valstd(3,:),'Color',colorE,'LineWidth',5)
+errorbar(x5,T2valmean(3,:),T2valstd(3,:),'Color',colorD,'LineWidth',5,'LineStyle','--')
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 1])
 hold off
 
 subplot(2,3,4) % pairing 4: FB85   T1 - NOFB70 T2
 hold on;
-errorbar(1:length(x5),T1valmean(4,:),T1valstd(4,:),'Color',color_fbeasy,'LineWidth',3)
-errorbar(1:length(x5),T2valmean(4,:),T2valstd(4,:),'Color',color_nofbdif,'LineWidth',3)
-ylabel('Task choice freq','fontsize',30)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+errorbar(x5,T1valmean(4,:),T1valstd(4,:),'Color',colorE,'LineWidth',5)
+errorbar(x5,T2valmean(4,:),T2valstd(4,:),'Color',colorD,'LineWidth',5,'LineStyle','--')
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 1])
 hold off
 
 subplot(2,3,5) % pairing 5: FB85   T2 - NOFB85 T1
 hold on;
-errorbar(1:length(x5),T1valmean(5,:),T1valstd(5,:),'Color',color_nofbeasy,'LineWidth',3)
-errorbar(1:length(x5),T2valmean(5,:),T2valstd(5,:),'Color',color_fbeasy,'LineWidth',3)
+errorbar(x5,T1valmean(5,:),T1valstd(5,:),'Color',colorE,'LineWidth',5,'LineStyle','--')
+errorbar(x5,T2valmean(5,:),T2valstd(5,:),'Color',colorE,'LineWidth',5)
 xlabel('Learning duration (number of trials)','fontsize',30)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 1])
 hold off
 
 subplot(2,3,6) % pairing 6: NOFB70 T1 - NOFB85 T2
 hold on;
-errorbar(1:length(x5),T1valmean(6,:),T1valstd(6,:),'Color',color_nofbdif,'LineWidth',3)
-errorbar(1:length(x5),T2valmean(6,:),T2valstd(6,:),'Color',color_nofbeasy,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','4','8','12','16','20',''})
+errorbar(x5,T1valmean(6,:),T1valstd(6,:),'Color',colorD,'LineWidth',5,'LineStyle','--')
+errorbar(x5,T2valmean(6,:),T2valstd(6,:),'Color',colorE,'LineWidth',5,'LineStyle','--')
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','4','8','12','16','20',''})
 axis([0 length(x5)+1 0 1])
 hold off
 
@@ -368,89 +402,93 @@ hold off
 
 
 % Split task choice data as a function of fluctuations in performance:
+% Supplementary Figure Experiment 3
+
 figure;
+
 subplot(2,3,1) % pairing 1: FB70   T1 - FB85   T2
 hold on;
 errorbar(x3,[mean(T1chperserL(:,1)) mean(T1chperser(:,1)) mean(T1chperserH(:,1))], ...
-    [std(T1chperserL(:,1)) std(T1chperser(:,1)) std(T1chperserH(:,1))]/sqrt(nS),'Color',color_fbdif,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_fbdif,'MarkerFaceColor',[1 1 1],...
+    [std(T1chperserL(:,1)) std(T1chperser(:,1)) std(T1chperserH(:,1))]/sqrt(nS),'Color',colorD,...
+    'LineStyle','-','Marker','o','MarkerEdgeColor',colorD,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
 errorbar(x3,[mean(T2chperserL(:,1)) mean(T2chperser(:,1)) mean(T2chperserH(:,1))], ...
-    [std(T2chperserL(:,1)) std(T2chperser(:,1)) std(T2chperserH(:,1))]/sqrt(nS),'Color',color_fbeasy,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_fbeasy,'MarkerFaceColor',[1 1 1],...
+    [std(T2chperserL(:,1)) std(T2chperser(:,1)) std(T2chperserH(:,1))]/sqrt(nS),'Color',colorE,...
+    'LineStyle','-','Marker','o','MarkerEdgeColor',colorE,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
-ylabel('Task choice frequency','fontsize',20)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+ylabel('Task choice frequency','fontsize',30)
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x3)+1 0 1])
 hold off
+
 
 subplot(2,3,2) % pairing 2: FB70   T1 - NOFB70 T2
 hold on;
 errorbar(x3,[mean(T1chperserL(:,2)) mean(T1chperser(:,2)) mean(T1chperserH(:,2))], ...
-    [std(T1chperserL(:,2)) std(T1chperser(:,2)) std(T1chperserH(:,2))]/sqrt(nS),'Color',color_fbdif,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_fbdif,'MarkerFaceColor',[1 1 1], ...
+    [std(T1chperserL(:,2)) std(T1chperser(:,2)) std(T1chperserH(:,2))]/sqrt(nS),'Color',colorD,...
+    'LineStyle','-','Marker','o','MarkerEdgeColor',colorD,'MarkerFaceColor',[1 1 1], ...
     'MarkerSize',11,'LineWidth',3)
 errorbar(x3,[mean(T2chperserL(:,2)) mean(T2chperser(:,2)) mean(T2chperserH(:,2))], ...
-    [std(T2chperserL(:,2)) std(T2chperser(:,2)) std(T2chperserH(:,2))]/sqrt(nS),'Color',color_nofbdif,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_nofbdif,'MarkerFaceColor',[1 1 1],...
+    [std(T2chperserL(:,2)) std(T2chperser(:,2)) std(T2chperserH(:,2))]/sqrt(nS),'Color',colorD,...
+    'LineStyle','--','Marker','o','MarkerEdgeColor',colorD,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x3)+1 0 1])
 hold off
 
 subplot(2,3,3) % pairing 3: FB70   T2 - NOFB85 T1
 hold on;
 errorbar(x3,[mean(T1chperserL(:,3)) mean(T1chperser(:,3)) mean(T1chperserH(:,3))], ...
-    [std(T1chperserL(:,3)) std(T1chperser(:,3)) std(T1chperserH(:,3))]/sqrt(nS),'Color',color_nofbeasy,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_nofbeasy,'MarkerFaceColor',[1 1 1], ...
+    [std(T1chperserL(:,3)) std(T1chperser(:,3)) std(T1chperserH(:,3))]/sqrt(nS),'Color',colorE,...
+    'LineStyle','--','Marker','o','MarkerEdgeColor',colorE,'MarkerFaceColor',[1 1 1], ...
     'MarkerSize',11,'LineWidth',3)
 errorbar(x3,[mean(T2chperserL(:,3)) mean(T2chperser(:,3)) mean(T2chperserH(:,3))], ...
-    [std(T2chperserL(:,3)) std(T2chperser(:,3)) std(T2chperserH(:,3))]/sqrt(nS),'Color',color_fbdif,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_fbdif,'MarkerFaceColor',[1 1 1],...
+    [std(T2chperserL(:,3)) std(T2chperser(:,3)) std(T2chperserH(:,3))]/sqrt(nS),'Color',colorD,...
+    'LineStyle','-','Marker','o','MarkerEdgeColor',colorD,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x3)+1 0 1])
 hold off
 
 subplot(2,3,4) % pairing 4: FB85   T1 - NOFB70 T2
 hold on;
 errorbar(x3,[mean(T1chperserL(:,4)) mean(T1chperser(:,4)) mean(T1chperserH(:,4))], ...
-    [std(T1chperserL(:,4)) std(T1chperser(:,4)) std(T1chperserH(:,4))]/sqrt(nS),'Color',color_fbeasy,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_fbeasy,'MarkerFaceColor',[1 1 1], ...
+    [std(T1chperserL(:,4)) std(T1chperser(:,4)) std(T1chperserH(:,4))]/sqrt(nS),'Color',colorE,...
+    'LineStyle','-','Marker','o','MarkerEdgeColor',colorE,'MarkerFaceColor',[1 1 1], ...
     'MarkerSize',11,'LineWidth',3)
 errorbar(x3,[mean(T2chperserL(:,4)) mean(T2chperser(:,4)) mean(T2chperserH(:,4))], ...
-    [std(T2chperserL(:,4)) std(T2chperser(:,4)) std(T2chperserH(:,4))]/sqrt(nS),'Color',color_nofbdif,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_nofbdif,'MarkerFaceColor',[1 1 1],...
+    [std(T2chperserL(:,4)) std(T2chperser(:,4)) std(T2chperserH(:,4))]/sqrt(nS),'Color',colorD,...
+    'LineStyle','--','Marker','o','MarkerEdgeColor',colorD,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x3)+1 0 1])
 hold off
 
 subplot(2,3,5) % pairing 5: FB85   T2 - NOFB85 T1
 hold on;
 errorbar(x3,[mean(T1chperserL(:,5)) mean(T1chperser(:,5)) mean(T1chperserH(:,5))], ...
-    [std(T1chperserL(:,5)) std(T1chperser(:,5)) std(T1chperserH(:,5))]/sqrt(nS),'Color',color_nofbeasy,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_nofbeasy,'MarkerFaceColor',[1 1 1], ...
+    [std(T1chperserL(:,5)) std(T1chperser(:,5)) std(T1chperserH(:,5))]/sqrt(nS),'Color',colorE,...
+    'LineStyle','--','Marker','o','MarkerEdgeColor',colorE,'MarkerFaceColor',[1 1 1], ...
     'MarkerSize',11,'LineWidth',3)
 errorbar(x3,[mean(T2chperserL(:,5)) mean(T2chperser(:,5)) mean(T2chperserH(:,5))], ...
-    [std(T2chperserL(:,5)) std(T2chperser(:,5)) std(T2chperserH(:,5))]/sqrt(nS),'Color',color_fbeasy,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_fbeasy,'MarkerFaceColor',[1 1 1],...
+    [std(T2chperserL(:,5)) std(T2chperser(:,5)) std(T2chperserH(:,5))]/sqrt(nS),'Color',colorE,...
+    'LineStyle','-','Marker','o','MarkerEdgeColor',colorE,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x3)+1 0 1])
 hold off
 
 subplot(2,3,6) % pairing 6: NOFB70 T1 - NOFB85 T2
 hold on;
 errorbar(x3,[mean(T1chperserL(:,6)) mean(T1chperser(:,6)) mean(T1chperserH(:,6))], ...
-    [std(T1chperserL(:,6)) std(T1chperser(:,6)) std(T1chperserH(:,6))]/sqrt(nS),'Color',color_nofbdif,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_nofbdif,'MarkerFaceColor',[1 1 1], ...
+    [std(T1chperserL(:,6)) std(T1chperser(:,6)) std(T1chperserH(:,6))]/sqrt(nS),'Color',colorD,...
+    'LineStyle','--','Marker','o','MarkerEdgeColor',colorD,'MarkerFaceColor',[1 1 1], ...
     'MarkerSize',11,'LineWidth',3)
 errorbar(x3,[mean(T2chperserL(:,6)) mean(T2chperser(:,6)) mean(T2chperserH(:,6))], ...
-    [std(T2chperserL(:,6)) std(T2chperser(:,6)) std(T2chperserH(:,6))]/sqrt(nS),'Color',color_nofbeasy,...
-    'LineStyle','-','Marker','o','MarkerEdgeColor',color_nofbeasy,'MarkerFaceColor',[1 1 1],...
+    [std(T2chperserL(:,6)) std(T2chperser(:,6)) std(T2chperserH(:,6))]/sqrt(nS),'Color',colorE,...
+    'LineStyle','--','Marker','o','MarkerEdgeColor',colorE,'MarkerFaceColor',[1 1 1],...
     'MarkerSize',11,'LineWidth',3)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x3)+1 0 1])
 hold off
 
@@ -458,30 +496,46 @@ hold off
 
 
 % Objective performance against subjective self-performance estimates:
+% Supplementary Figure Experiment 3.
+
 figure;
 
 subplot(1,2,1)
 hold on;
-bar(x4,[mean(P(:,1)) 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x4,[0 mean(P(:,2)) 0 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x4,[0 0 mean(P(:,3)) 0],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x4,[0 0 0 mean(P(:,4))],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
+bar(x4,[mean(P(:,1)) 0 0 0],'FaceColor',colorE,'EdgeColor',colorE,'LineWidth',5)
+bar(x4,[0 mean(P(:,2)) 0 0],'FaceColor',colorD,'EdgeColor',colorD,'LineWidth',5)
+bar(x4,[0 0 mean(P(:,3)) 0],'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+bar(x4,[0 0 0 mean(P(:,4))],'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+for o = 1:nS
+    hold on;
+    plot([1+sss,1+ttt],[P(o,1),P(o,1)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+    plot([2+sss,2+ttt],[P(o,2),P(o,2)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+    plot([3+sss,3+ttt],[P(o,3),P(o,3)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+    plot([4+sss,4+ttt],[P(o,4),P(o,4)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+end
 errorbar(1:length(x4),mean(P),std(P)/sqrt(nS),'k.','LineWidth',2)
-ylabel('Mean performance in learning blocks','fontsize',30)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+ylabel('Mean performance','fontsize',30)
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x4)+1 .5 1])
 hold off
 
 subplot(1,2,2)
 hold on;
-bar(x4,[mean(T(:,1)) 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x4,[0 mean(T(:,2)) 0 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x4,[0 0 mean(T(:,3)) 0],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x4,[0 0 0 mean(T(:,4))],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
+bar(x4,[mean(T(:,1)) 0 0 0],'FaceColor',colorE,'EdgeColor',colorE,'LineWidth',5)
+bar(x4,[0 mean(T(:,2)) 0 0],'FaceColor',colorD,'EdgeColor',colorD,'LineWidth',5)
+bar(x4,[0 0 mean(T(:,3)) 0],'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+bar(x4,[0 0 0 mean(T(:,4))],'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+for o = 1:nS
+    hold on;
+    plot([1+sss,1+ttt],[T(o,1),T(o,1)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+    plot([2+sss,2+ttt],[T(o,2),T(o,2)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+    plot([3+sss,3+ttt],[T(o,3),T(o,3)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+    plot([4+sss,4+ttt],[T(o,4),T(o,4)],'Color',color_grey,'LineWidth',2,'LineStyle','-') ;
+end
 errorbar(1:length(x4),mean(T),std(T)/sqrt(nS),'k.','LineWidth',2)
 ylabel('Task choice frequency','fontsize',30)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
-legend('FB easy','FB diff','CONF easy','CONF diff')
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
+legend('FB easy','FB diff','NO FB easy','NO FB diff')
 axis([0 length(x4)+1 0 .5])
 hold off
 
@@ -494,46 +548,51 @@ hold off
 % choice, Mean local confidence, Metacognitive efficiency.
 
 figure;
+
 subplot(2,2,1)
+bar(1, mean(acct1perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(acct2perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
 hold on;
-bar(x2,[mean(acct1perser(:,6)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,6))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,6)) 0],[std(acct1perser(:,6))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,6))],[0 std(acct2perser(:,6))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',20,'LineWidth',1.2,'XTickLabel',{'','','',''})
+errorbar(x2,[mean(acct1perser(:,6)) 0],[std(acct1perser(:,6))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,6))],[0 std(acct2perser(:,6))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',20,'LineWidth',1.5,'XTickLabel',{'','','',''})
 ylabel('Objective performance','fontsize',20)
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,2,2)
+bar(1, mean(T1chperser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(T2chperser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
 hold on;
-bar(x2,[mean(T1chperser(:,6)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(T2chperser(:,6))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(T1chperser(:,6)) 0],[std(T1chperser(:,6))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(T2chperser(:,6))],[0 std(T2chperser(:,6))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',20,'LineWidth',1.2,'XTickLabel',{'','','',''})
+errorbar(x2,[mean(T1chperser(:,6)) 0],[std(T1chperser(:,6))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(T2chperser(:,6))],[0 std(T2chperser(:,6))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',20,'LineWidth',1.5,'XTickLabel',{'','','',''})
 ylabel('Task choice','fontsize',20)
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,2,3)
+bar(1, mean(confidence_level_pooled(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(confidence_level_pooled(:,1)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
 hold on;
-bar(x2,[0 mean(confidence_level_pooled(:,1))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[mean(confidence_level_pooled(:,2)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[0 mean(confidence_level_pooled(:,1))],[0 std(confidence_level_pooled(:,1))/sqrt(nS)],'k.','LineWidth',2)
-errorbar(1:length(x2),[mean(confidence_level_pooled(:,2)) 0],[std(confidence_level_pooled(:,2))/sqrt(nS) 0],'k.','LineWidth',2)
-set(gca,'fontsize',20,'LineWidth',1.2,'XTickLabel',{'','','',''})
+errorbar(x2,[0 mean(confidence_level_pooled(:,1))],[0 std(confidence_level_pooled(:,1))/sqrt(nS)],'k.','LineWidth',5)
+errorbar(x2,[mean(confidence_level_pooled(:,2)) 0],[std(confidence_level_pooled(:,2))/sqrt(nS) 0],'k.','LineWidth',5)
+set(gca,'fontsize',20,'LineWidth',1.5,'XTickLabel',{'','','',''})
 ylabel('Confidence level','fontsize',20)
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,2,4)
+bar(1, mean(mratios(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(mratios(:,1)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
 hold on;
-bar(x2,[0 mean(mratios(:,1))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[mean(mratios(:,2)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[0 mean(mratios(:,1))],[0 std(mratios(:,1))/sqrt(nS)],'k.','LineWidth',2)
-errorbar(1:length(x2),[mean(mratios(:,2)) 0],[std(mratios(:,2))/sqrt(nS) 0],'k.','LineWidth',2)
-set(gca,'fontsize',20,'LineWidth',1.2,'XTickLabel',{'','','',''})
+errorbar(x2,[0 mean(mratios(:,1))],[0 std(mratios(:,1))/sqrt(nS)],'k.','LineWidth',5)
+errorbar(x2,[mean(mratios(:,2)) 0],[std(mratios(:,2))/sqrt(nS) 0],'k.','LineWidth',5)
+set(gca,'fontsize',20,'LineWidth',1.5,'XTickLabel',{'','','',''})
 ylabel('M-ratio','fontsize',20)
 axis([0 length(x2)+1 0 1.5])
 hold off
@@ -544,13 +603,15 @@ hold off
 % Mean local confidence in easy vs difficult conditions:
 figure;
 hold on;
-bar(x2,[0 mean(confidence_level_pooled(:,1))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[mean(confidence_level_pooled(:,2)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
+bar(x2,[0 mean(confidence_level_pooled(:,1))],'FaceColor',[1 1 1], ...
+    'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+bar(x2,[mean(confidence_level_pooled(:,2)) 0],'FaceColor',[1 1 1], ...
+    'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
 errorbar(1:length(x2),[0 mean(confidence_level_pooled(:,1))], ...
-    [0 std(confidence_level_pooled(:,1))/sqrt(nS)],'k.','LineWidth',2)
+    [0 std(confidence_level_pooled(:,1))/sqrt(nS)],'k.','LineWidth',5)
 errorbar(1:length(x2),[mean(confidence_level_pooled(:,2)) 0], ...
-    [std(confidence_level_pooled(:,2))/sqrt(nS) 0],'k.','LineWidth',2)
-set(gca,'fontsize',30,'LineWidth',1.2,'XTickLabel',{'','','',''})
+    [std(confidence_level_pooled(:,2))/sqrt(nS) 0],'k.','LineWidth',5)
+set(gca,'fontsize',30,'LineWidth',1.5,'XTickLabel',{'','','',''})
 ylabel('Confidence level','fontsize',30)
 axis([0 length(x2)+1 .5 1])
 hold off
@@ -562,64 +623,63 @@ hold off
 figure;
 
 subplot(2,3,1) % pairing 1: FB70   T1 - FB85   T2
-hold on;
-bar(x2,[mean(acct1perser(:,1)) 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,1))],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,1)) 0],[std(acct1perser(:,1))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,1))],[0 std(acct2perser(:,1))/sqrt(nS)],'k.','LineWidth',2)
-ylabel('Accuracy per pairing','fontsize',15)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
+bar(1, mean(acct1perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5)
+hold on
+bar(2, mean(acct2perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5)
+errorbar(x2,[mean(acct1perser(:,1)) 0],[std(acct1perser(:,1))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,1))],[0 std(acct2perser(:,1))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,3,2) % pairing 2: FB70   T1 - NOFB70 T2
-hold on;
-bar(x2,[mean(acct1perser(:,2)) 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,2))],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,2)) 0],[std(acct1perser(:,2))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,2))],[0 std(acct2perser(:,2))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
+bar(1, mean(acct1perser(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5)
+hold on
+bar(2, mean(acct2perser(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+errorbar(x2,[mean(acct1perser(:,2)) 0],[std(acct1perser(:,2))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,2))],[0 std(acct2perser(:,2))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+title('Performance per pairing','fontsize',25)
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,3,3) % pairing 3: FB70   T2 - NOFB85 T1
-hold on;
-bar(x2,[mean(acct1perser(:,3)) 0],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,3))],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,3)) 0],[std(acct1perser(:,3))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,3))],[0 std(acct2perser(:,3))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
+bar(1, mean(acct1perser(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(acct2perser(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5)
+errorbar(x2,[mean(acct1perser(:,3)) 0],[std(acct1perser(:,3))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,3))],[0 std(acct2perser(:,3))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,3,4) % pairing 4: FB85   T1 - NOFB70 T2
-hold on;
-bar(x2,[mean(acct1perser(:,4)) 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,4))],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,4)) 0],[std(acct1perser(:,4))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,4))],[0 std(acct2perser(:,4))/sqrt(nS)],'k.','LineWidth',2)
-ylabel('Accuracy per pairing','fontsize',15)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
+bar(1, mean(acct1perser(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5)
+hold on
+bar(2, mean(acct2perser(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+errorbar(x2,[mean(acct1perser(:,4)) 0],[std(acct1perser(:,4))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,4))],[0 std(acct2perser(:,4))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,3,5) % pairing 5: FB85   T2 - NOFB85 T1
-hold on;
-bar(x2,[mean(acct1perser(:,5)) 0],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,5))],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,5)) 0],[std(acct1perser(:,5))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,5))],[0 std(acct2perser(:,5))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
+bar(1, mean(acct1perser(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(acct2perser(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5)
+errorbar(x2,[mean(acct1perser(:,5)) 0],[std(acct1perser(:,5))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,5))],[0 std(acct2perser(:,5))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x2)+1 0 1])
 hold off
 
 subplot(2,3,6) % pairing 6: NOFB70 T1 - NOFB85 T2
-hold on;
-bar(x2,[mean(acct1perser(:,6)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(acct2perser(:,6))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(acct1perser(:,6)) 0],[std(acct1perser(:,6))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(acct2perser(:,6))],[0 std(acct2perser(:,6))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
+bar(1, mean(acct1perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(acct2perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+errorbar(x2,[mean(acct1perser(:,6)) 0],[std(acct1perser(:,6))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(acct2perser(:,6))],[0 std(acct2perser(:,6))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
 axis([0 length(x2)+1 0 1])
 hold off
 
@@ -630,66 +690,66 @@ hold off
 figure;
 
 subplot(2,3,1) % pairing 1: FB70   T1 - FB85   T2
-hold on;
-bar(x2,[mean(RTt1perser(:,1)) 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(RTt2perser(:,1))],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(RTt1perser(:,1)) 0],[std(RTt1perser(:,1))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(RTt2perser(:,1))],[0 std(RTt2perser(:,1))/sqrt(nS)],'k.','LineWidth',2)
-ylabel('RTs per pairing','fontsize',15)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
-axis([0 length(x2)+1 0 900])
+bar(1, mean(RTt1perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5)
+hold on
+bar(2, mean(RTt2perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5)
+errorbar(x2,[mean(RTt1perser(:,1)) 0],[std(RTt1perser(:,1))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(RTt2perser(:,1))],[0 std(RTt2perser(:,1))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+axis([0 length(x2)+1 0 800])
 hold off
 
 subplot(2,3,2) % pairing 2: FB70   T1 - NOFB70 T2
-hold on;
-bar(x2,[mean(RTt1perser(:,2)) 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(RTt2perser(:,2))],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(RTt1perser(:,2)) 0],[std(RTt1perser(:,2))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(RTt2perser(:,2))],[0 std(RTt2perser(:,2))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
-axis([0 length(x2)+1 0 900])
+bar(1, mean(RTt1perser(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5)
+hold on
+bar(2, mean(RTt2perser(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+errorbar(x2,[mean(RTt1perser(:,2)) 0],[std(RTt1perser(:,2))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(RTt2perser(:,2))],[0 std(RTt2perser(:,2))/sqrt(nS)],'k.','LineWidth',5)
+title('RTs per pairing','fontsize',25)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+axis([0 length(x2)+1 0 800])
 hold off
 
 subplot(2,3,3) % pairing 3: FB70   T2 - NOFB85 T1
-hold on;
-bar(x2,[mean(RTt1perser(:,3)) 0],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(RTt2perser(:,3))],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(RTt1perser(:,3)) 0],[std(RTt1perser(:,3))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(RTt2perser(:,3))],[0 std(RTt2perser(:,3))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
-axis([0 length(x2)+1 0 900])
+bar(1, mean(RTt1perser(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(RTt2perser(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5)
+errorbar(x2,[mean(RTt1perser(:,3)) 0],[std(RTt1perser(:,3))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(RTt2perser(:,3))],[0 std(RTt2perser(:,3))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+axis([0 length(x2)+1 0 800])
 hold off
 
 subplot(2,3,4) % pairing 4: FB85   T1 - NOFB70 T2
-hold on;
-bar(x2,[mean(RTt1perser(:,4)) 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(RTt2perser(:,4))],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(RTt1perser(:,4)) 0],[std(RTt1perser(:,4))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(RTt2perser(:,4))],[0 std(RTt2perser(:,4))/sqrt(nS)],'k.','LineWidth',2)
-ylabel('RTs per pairing','fontsize',15)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
-axis([0 length(x2)+1 0 900])
+bar(1, mean(RTt1perser(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5)
+hold on
+bar(2, mean(RTt2perser(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+errorbar(x2,[mean(RTt1perser(:,4)) 0],[std(RTt1perser(:,4))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(RTt2perser(:,4))],[0 std(RTt2perser(:,4))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+axis([0 length(x2)+1 0 800])
 hold off
 
 subplot(2,3,5) % pairing 5: FB85   T2 - NOFB85 T1
-hold on;
-bar(x2,[mean(RTt1perser(:,5)) 0],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(RTt2perser(:,5))],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(RTt1perser(:,5)) 0],[std(RTt1perser(:,5))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(RTt2perser(:,5))],[0 std(RTt2perser(:,5))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
-axis([0 length(x2)+1 0 900])
+bar(1, mean(RTt1perser(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(RTt2perser(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5)
+errorbar(x2,[mean(RTt1perser(:,5)) 0],[std(RTt1perser(:,5))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(RTt2perser(:,5))],[0 std(RTt2perser(:,5))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+axis([0 length(x2)+1 0 800])
 hold off
 
 subplot(2,3,6) % pairing 6: NOFB70 T1 - NOFB85 T2
-hold on;
-bar(x2,[mean(RTt1perser(:,6)) 0],'FaceColor',color_nofbdif,'EdgeColor',[1 1 1])
-bar(x2,[0 mean(RTt2perser(:,6))],'FaceColor',color_nofbeasy,'EdgeColor',[1 1 1])
-errorbar(1:length(x2),[mean(RTt1perser(:,6)) 0],[std(RTt1perser(:,6))/sqrt(nS) 0],'k.','LineWidth',2)
-errorbar(1:length(x2),[0 mean(RTt2perser(:,6))],[0 std(RTt2perser(:,6))/sqrt(nS)],'k.','LineWidth',2)
-set(gca,'fontsize',10,'LineWidth',1.2,'XTickLabel',{'','','',''})
-axis([0 length(x2)+1 0 900])
+bar(1, mean(RTt1perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',5,'LineStyle','--')
+hold on
+bar(2, mean(RTt2perser(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',5,'LineStyle','--')
+errorbar(x2,[mean(RTt1perser(:,6)) 0],[std(RTt1perser(:,6))/sqrt(nS) 0],'k.','LineWidth',5)
+errorbar(x2,[0 mean(RTt2perser(:,6))],[0 std(RTt2perser(:,6))/sqrt(nS)],'k.','LineWidth',5)
+set(gca,'fontsize',25,'LineWidth',1.5,'XTickLabel',{'','','',''})
+axis([0 length(x2)+1 0 800])
 hold off
+
 
 
 
@@ -701,14 +761,21 @@ figure;
 
 subplot(3,1,1)
 hold on;
-bar(x8,[mean(L_H1_H2(:,1))  0 0 0 0 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x8,[0 mean(L_H1_H2(:,2))  0 0 0 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x8,[0 0 mean(L_H1_H2(:,3))  0 0 0 0 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 mean(L_H1_H2(:,4))  0 0 0 0],'FaceColor',color_fbdif ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 mean(L_H1_H2(:,5))  0 0 0],'FaceColor',color_nofbeasy ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 mean(L_H1_H2(:,6))  0 0],'FaceColor',color_nofbeasy ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 0 mean(L_H1_H2(:,7))  0],'FaceColor',color_nofbdif ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 0 0 mean(L_H1_H2(:,8)) ],'FaceColor',color_nofbdif ,'EdgeColor',[1 1 1])
+bar(1, mean(L_H1_H2(:,1)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','-')
+hold on
+bar(2, mean(L_H1_H2(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','-')
+hold on
+bar(3, mean(L_H1_H2(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','-')
+hold on
+bar(4, mean(L_H1_H2(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','-')
+hold on
+bar(5, mean(L_H1_H2(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','--')
+hold on
+bar(6, mean(L_H1_H2(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','--')
+hold on
+bar(7, mean(L_H1_H2(:,7)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','--')
+hold on
+bar(8, mean(L_H1_H2(:,8)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','--')
 errorbar(x8,mean(L_H1_H2),std(L_H1_H2)/sqrt(nS),'k.','LineWidth',2)
 ylabel('Perf','fontsize',25)
     set(gca,'FontSize',15,'LineWidth',1.2,'XTickLabel',{'' 'fbE_H1'...
@@ -718,14 +785,21 @@ hold off
 
 subplot(3,1,2)
 hold on;
-bar(x8,[mean(RT_H1_H2(:,1))  0 0 0 0 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x8,[0 mean(RT_H1_H2(:,2))  0 0 0 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x8,[0 0 mean(RT_H1_H2(:,3))  0 0 0 0 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 mean(RT_H1_H2(:,4))  0 0 0 0],'FaceColor',color_fbdif ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 mean(RT_H1_H2(:,5))  0 0 0],'FaceColor',color_nofbeasy ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 mean(RT_H1_H2(:,6))  0 0],'FaceColor',color_nofbeasy ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 0 mean(RT_H1_H2(:,7))  0],'FaceColor',color_nofbdif ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 0 0 mean(RT_H1_H2(:,8)) ],'FaceColor',color_nofbdif ,'EdgeColor',[1 1 1])
+bar(1, mean(RT_H1_H2(:,1)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','-')
+hold on
+bar(2, mean(RT_H1_H2(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','-')
+hold on
+bar(3, mean(RT_H1_H2(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','-')
+hold on
+bar(4, mean(RT_H1_H2(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','-')
+hold on
+bar(5, mean(RT_H1_H2(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','--')
+hold on
+bar(6, mean(RT_H1_H2(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','--')
+hold on
+bar(7, mean(RT_H1_H2(:,7)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','--')
+hold on
+bar(8, mean(RT_H1_H2(:,8)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','--')
 errorbar(x8,mean(RT_H1_H2),std(RT_H1_H2)/sqrt(nS),'k.','LineWidth',2)
 ylabel('RTs (raw)','fontsize',25)
     set(gca,'FontSize',15,'LineWidth',1.2,'XTickLabel',{'' 'fbE_H1'...
@@ -736,14 +810,21 @@ hold off
 
 subplot(3,1,3)
 hold on;
-bar(x8,[nanmean(evol_indiv_RT_LB(:,1))  0 0 0 0 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x8,[0 nanmean(evol_indiv_RT_LB(:,2))  0 0 0 0 0 0],'FaceColor',color_fbeasy,'EdgeColor',[1 1 1])
-bar(x8,[0 0 nanmean(evol_indiv_RT_LB(:,3))  0 0 0 0 0],'FaceColor',color_fbdif,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 nanmean(evol_indiv_RT_LB(:,4))  0 0 0 0],'FaceColor',color_fbdif ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 nanmean(evol_indiv_RT_LB(:,5))  0 0 0],'FaceColor',color_nofbeasy ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 nanmean(evol_indiv_RT_LB(:,6))  0 0],'FaceColor',color_nofbeasy ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 0 nanmean(evol_indiv_RT_LB(:,7))  0],'FaceColor',color_nofbdif ,'EdgeColor',[1 1 1])
-bar(x8,[0 0 0 0 0 0 0 nanmean(evol_indiv_RT_LB(:,8)) ],'FaceColor',color_nofbdif ,'EdgeColor',[1 1 1])
+bar(1, mean(evol_indiv_RT_LB(:,1)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','-')
+hold on
+bar(2, mean(evol_indiv_RT_LB(:,2)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','-')
+hold on
+bar(3, mean(evol_indiv_RT_LB(:,3)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','-')
+hold on
+bar(4, mean(evol_indiv_RT_LB(:,4)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','-')
+hold on
+bar(5, mean(evol_indiv_RT_LB(:,5)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','--')
+hold on
+bar(6, mean(evol_indiv_RT_LB(:,6)),'FaceColor',[1 1 1],'EdgeColor',colorE,'LineWidth',3,'LineStyle','--')
+hold on
+bar(7, mean(evol_indiv_RT_LB(:,7)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','--')
+hold on
+bar(8, mean(evol_indiv_RT_LB(:,8)),'FaceColor',[1 1 1],'EdgeColor',colorD,'LineWidth',3,'LineStyle','--')
 errorbar(x8,nanmean(evol_indiv_RT_LB),nanstd(evol_indiv_RT_LB)/sqrt(nS),'k.','LineWidth',2)
 ylabel('RTs (log)','fontsize',25)
     set(gca,'FontSize',15,'LineWidth',1.2,'XTickLabel',{'' 'fbE_H1'...
@@ -758,12 +839,13 @@ hold off
 % Individual shifts in evolution betw first and second halves for each
 % participant separately:
 figure;
+
 subplot(2,2,1)
 for i=1:nS
     hold on;
-    plot(1:2,[L_H1_H2(i,1),L_H1_H2(i,2)],'Color',color_fbeasy,'LineWidth',3)
+    plot(x2,[L_H1_H2(i,1),L_H1_H2(i,2)],'Color',colorE,'LineWidth',3)
 end
-set(gca,'FontSize',30,'LineWidth',1.2,'XTickLabel',{'' '1st_half' '2nd_half' ''})
+set(gca,'FontSize',30,'LineWidth',1.5,'XTickLabel',{'' '1st_half' '2nd_half' ''})
 ylabel('Performance','fontsize',30)
 axis([0 3 .4 1])
 hold off
@@ -771,18 +853,18 @@ hold off
 subplot(2,2,2)
 for i=1:nS
     hold on;
-    plot(1:2,[L_H1_H2(i,3),L_H1_H2(i,4)],'Color',color_fbdif,'LineWidth',3)
+    plot(x2,[L_H1_H2(i,3),L_H1_H2(i,4)],'Color',colorD,'LineWidth',3)
 end
-set(gca,'FontSize',30,'LineWidth',1.2,'XTickLabel',{'' '1st_half' '2nd_half' ''})
+set(gca,'FontSize',30,'LineWidth',1.5,'XTickLabel',{'' '1st_half' '2nd_half' ''})
 axis([0 3 .4 1])
 hold off
 
 subplot(2,2,3)
 for i=1:nS
     hold on;
-    plot(1:2,[L_H1_H2(i,5),L_H1_H2(i,6)],'Color',color_nofbeasy,'LineWidth',3)
+    plot(x2,[L_H1_H2(i,5),L_H1_H2(i,6)],'Color',colorE,'LineWidth',3,'LineStyle','--')
 end
-set(gca,'FontSize',30,'LineWidth',1.2,'XTickLabel',{'' '1st_half' '2nd_half' ''})
+set(gca,'FontSize',30,'LineWidth',1.5,'XTickLabel',{'' '1st_half' '2nd_half' ''})
 ylabel('Performance','fontsize',30)
 axis([0 3 .4 1])
 hold off
@@ -790,66 +872,98 @@ hold off
 subplot(2,2,4)
 for i=1:nS
     hold on;
-    plot(1:2,[L_H1_H2(i,7),L_H1_H2(i,8)],'Color',color_nofbdif,'LineWidth',3)
+    plot(x2,[L_H1_H2(i,7),L_H1_H2(i,8)],'Color',colorD,'LineWidth',3,'LineStyle','--')
 end
-set(gca,'FontSize',30,'LineWidth',1.2,'XTickLabel',{'' '1st_half' '2nd_half' ''})
+set(gca,'FontSize',30,'LineWidth',1.5,'XTickLabel',{'' '1st_half' '2nd_half' ''})
 axis([0 3 .4 1])
 hold off
 
 
 
 
-% Relationship between metacognitive efficiency and global self-performance
-% estimates: between-subjects scatterplot
+
+% Relationship between metacognitive ability and global self-performance
+% estimates: between-subjects scatterplots
 
 % Difference in self-performance estimates between NFB_Eeasy - NFB_Diff.:
 delta_task_ch_pairing6 = T2chperser(:,6)-T1chperser(:,6) ;
 
-% Average metacognitive efficiency between fit in easy and diff. trials:
-MratioMoy = (mratios(:,1)+mratios(:,2))/2 ; % classic fit
+% Average metacognitive ability between fit in easy and diff. trials:
+HMratioMoy = (fitHME.Mratio+fitHMD.Mratio)/2 ;% hierarchical fit
+MratioMoy  = (mratios(:,1)+mratios(:,2))/2 ;  % classic fit MLE
+AUROCMoy   = (auroc2(:,1)+auroc2(:,2))/2 ;    % AUROC2
 
-% Additionally removing one subject with negative Metacog efficiency:
+
+% Compute parametric and non parametric correlation coefficients:
+% Additionally removing 1 subject with negative metacog efficiency for MLE
 [rho,pval] = corrcoef(delta_task_ch_pairing6(MratioMoy>0), ...
     (MratioMoy(MratioMoy>0)));
 
-disp(['Correlation between metacognitive efficiency MLE and global self-performance estimates: ', ...
+disp(['Pearson correlation between metacognitive efficiency MLE and global SPEs: ', ...
     num2str(rho(2)),', significance: ',num2str(pval(2))])
 
-figure;
-plot(delta_task_ch_pairing6,MratioMoy,'Color',[.8 .8 .2],...
-    'LineStyle','none','Marker','o','MarkerEdgeColor',[.8 .8 .2],...
-    'MarkerFaceColor',[.8 .8 .2],'Markersize',15);lsline;
-set(gca,'fontsize',25,'LineWidth',2)
-ylabel('Metacognitive efficiency','fontsize',25)
-xlabel('Task choice Easy vs. Difficult','fontsize',25)
+[rho,pval] = corrcoef(delta_task_ch_pairing6(HMratioMoy>0), ...
+    (HMratioMoy(HMratioMoy>0)));
 
-
-
-% Average metacognitive efficiency between fit in easy and diff. trials:
-MratioMoyHM = (fitHME.Mratio+fitHMD.Mratio)/2; % hierarchical fit
-
-[rho,pval] = corrcoef(delta_task_ch_pairing6(MratioMoyHM>0), ...
-    (MratioMoyHM(MratioMoyHM>0)));
-
-disp(['Correlation between metacognitive efficiency HMeta-d and global self-performance estimates: ', ...
+disp(['Pearson correlation between metacognitive efficiency HMeta-d and global SPEs: ', ...
     num2str(rho(2)),', significance: ',num2str(pval(2))])
+
+[rho,pval] = corrcoef(delta_task_ch_pairing6(AUROCMoy>0), ...
+    (AUROCMoy(AUROCMoy>0)));
+
+disp(['Pearson correlation between AUROC2 and global SPEs: ', ...
+    num2str(rho(2)),', significance: ',num2str(pval(2))])
+
+
+
+[rho,pval] = corr(delta_task_ch_pairing6(MratioMoy>0), ...
+    (MratioMoy(MratioMoy>0)),'Type','Spearman');
+
+disp(['Spearman correlation between metacognitive efficiency MLE and global SPEs: ', ...
+    num2str(rho),', significance: ',num2str(pval)])
+
+[rho,pval] = corr(delta_task_ch_pairing6(HMratioMoy>0), ...
+    (HMratioMoy(HMratioMoy>0)'),'Type','Spearman');
+
+disp(['Spearman correlation between metacognitive efficiency HMeta-d and global SPEs: ', ...
+    num2str(rho),', significance: ',num2str(pval)])
+
+[rho,pval] = corr(delta_task_ch_pairing6(AUROCMoy>0), ...
+    (AUROCMoy(AUROCMoy>0)),'Type','Spearman');
+
+disp(['Spearman correlation between AUROC2 and global SPEs: ', ...
+    num2str(rho),', significance: ',num2str(pval)])
+
 
 
 
 % NB. helper function regression_line_ci.m works only under Mac, but
 % the regression line without c.i. can still be plotted:
 
-STATSreg = regstats(MratioMoyHM,delta_task_ch_pairing6,'linear','beta');
+STATSregH = regstats(HMratioMoy,delta_task_ch_pairing6,'linear','beta');
+STATSreg = regstats(MratioMoy,delta_task_ch_pairing6,'linear','beta');
+STATSregA = regstats(AUROCMoy,delta_task_ch_pairing6,'linear','beta');
 
+% Main Figure 5 and Supplementary Figure 5 in paper
 figure;
-ylabel('Metacognitive efficiency','fontsize',30)
-xlabel('Task choice Easy minus Difficult','fontsize',30)
-regression_line_ci(.05,STATSreg.beta,delta_task_ch_pairing6,MratioMoyHM)
-set(gca,'fontsize',30,'LineWidth',2)
 
+subplot(2,3,1)
+regression_line_ci(.05,STATSreg.beta,delta_task_ch_pairing6(MratioMoy>0),(MratioMoy(MratioMoy>0)))
+set(gca,'fontsize',25,'LineWidth',1.5)
+ylabel('Metacog. efficiency (MLE)','fontsize',25)
+xlabel('Task choice Easy minus Difficult','fontsize',25)
 
+subplot(2,3,2)
+regression_line_ci(.05,STATSregA.beta,delta_task_ch_pairing6,AUROCMoy)
+set(gca,'fontsize',25,'LineWidth',1.5)
+ylabel('AUROC2','fontsize',25)
+xlabel('Task choice Easy minus Difficult','fontsize',25)
 
-
+subplot(2,3,3)
+regression_line_ci(.05,STATSregH.beta,delta_task_ch_pairing6,HMratioMoy')
+set(gca,'fontsize',25,'LineWidth',1.5)
+ylabel('Metacog. efficiency (Hierar.)','fontsize',25)
+xlabel('Task choice Easy minus Difficult','fontsize',25)
 
 
 
